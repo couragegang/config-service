@@ -1,0 +1,32 @@
+# docker compose up --build
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: config
+      POSTGRES_PASSWORD: config
+      POSTGRES_DB: config
+    ports:
+      - "5434:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U config -d config"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+
+  config:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8084:8084"
+    environment:
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_NAME: config
+      DB_USER: config
+      DB_PASSWORD: config
+      CONFIG_INTERNAL_API_KEY: dev-internal-key
+    depends_on:
+      postgres:
+        condition: service_healthy

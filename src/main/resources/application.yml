@@ -1,0 +1,37 @@
+micronaut:
+  application:
+    name: config-service
+  server:
+    port: 8084
+    context-path: /v1/config
+  metrics:
+    enabled: true
+    export:
+      prometheus:
+        enabled: true
+
+endpoints:
+  health:
+    enabled: true
+    sensitive: false
+  metrics:
+    enabled: false
+  prometheus:
+    enabled: true
+    sensitive: false
+    path: metrics
+
+datasources:
+  default:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:config}
+    username: ${DB_USER:config}
+    password: ${DB_PASSWORD:config}
+    driver-class-name: org.postgresql.Driver
+
+flyway:
+  datasources:
+    default:
+      enabled: true
+
+config-service:
+  internal-api-key: ${CONFIG_INTERNAL_API_KEY:dev-internal-key}

@@ -1,0 +1,190 @@
+openapi: 3.1.0
+info:
+  title: Config Service API
+  version: 0.1.0
+  description: |
+    Workspaces и настройки org. **Не** хранит MCP installations (см. mcp-gateway).
+    x-erd: cursor-context/docs/erd-and-bounded-contexts.md#3-bc-workspace--config-config-service
+servers:
+  - url: http://localhost:8084/v1/config
+    description: локально
+tags:
+  - name: workspaces
+  - name: internal
+security:
+  - bearerAuth: []
+paths:
+  /orgs/{orgId}/workspaces:
+    get:
+      tags: [workspaces]
+      operationId: configWorkspacesList
+      summary: Список workspace (фильтр group_id)
+      parameters:
+        - $ref: '#/components/parameters/OrgId'
+        - name: group_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkspaceListResponse'
+    post:
+      tags: [workspaces]
+      operationId: configWorkspacesCreate
+      summary: Создать workspace в группе
+      parameters:
+        - $ref: '#/components/parameters/OrgId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WorkspaceCreateRequest'
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workspace'
+  /workspaces/{workspaceId}:
+    get:
+      tags: [workspaces]
+      operationId: configWorkspaceGet
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workspace'
+    patch:
+      tags: [workspaces]
+      operationId: configWorkspacePatch
+      parameters:
+        - $ref: '#/components/parameters/WorkspaceId'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WorkspacePatchRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workspace'
+
+  /internal/orgs/{orgId}/bootstrap-default-workspace:
+    post:
+      tags: [internal]
+      operationId: configBootstrapDefaultWorkspace
+      summary: Создать default workspace в default group (IAM при create org)
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/OrgId'
+        - name: X-Config-Internal-Key
+          in: header
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BootstrapDefaultWorkspaceRequest'
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workspace'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    OrgId:
+      name: orgId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    WorkspaceId:
+      name: workspaceId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+  schemas:
+    Workspace:
+      type: object
+      required: [id, orgId, groupId, name, slug, status, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        orgId:
+          type: string
+          format: uuid
+        groupId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        slug:
+          type: string
+        status:
+          type: string
+          enum: [active, archived]
+        createdAt:
+          type: string
+          format: date-time
+    WorkspaceCreateRequest:
+      type: object
+      required: [name, slug, groupId]
+      properties:
+        name:
+          type: string
+        slug:
+          type: string
+        groupId:
+          type: string
+          format: uuid
+    WorkspacePatchRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        status:
+          type: string
+          enum: [active, archived]
+    WorkspaceListResponse:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Workspace'
+
+    BootstrapDefaultWorkspaceRequest:
+      type: object
+      required: [defaultGroupId]
+      properties:
+        defaultGroupId:
+          type: string
+          format: uuid
+        orgName:
+          type: string
+          description: Для отображаемого имени workspace
