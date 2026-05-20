@@ -19,7 +19,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Controller
-public final class WorkspacesController {
+public class WorkspacesController {
 
     private final WorkspaceService workspaces;
 

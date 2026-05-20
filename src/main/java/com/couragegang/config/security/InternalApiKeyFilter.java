@@ -15,7 +15,7 @@ import org.reactivestreams.Publisher;
 import reactor.core.publisher.Mono;
 
 @Filter("/internal/**")
-public final class InternalApiKeyFilter implements HttpServerFilter {
+public class InternalApiKeyFilter implements HttpServerFilter {
 
     public static final String HEADER = "X-Config-Internal-Key";
 
