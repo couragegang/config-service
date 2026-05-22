@@ -1,12 +1,15 @@
 package com.couragegang.config.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.couragegang.config.api.dto.WorkspaceModels.WorkspaceCreateRequest;
+import com.couragegang.config.api.dto.WorkspaceModels.WorkspacePatchRequest;
+import com.couragegang.config.error.ConfigApiException;
 import com.couragegang.config.repo.WorkspaceRepository;
 import com.couragegang.config.repo.WorkspaceRepository.WorkspaceRow;
 import java.sql.SQLException;
@@ -75,6 +78,42 @@ class WorkspaceServiceTest {
 
         var ws = svc.create(orgId, new WorkspaceCreateRequest("Proj", "proj", groupId));
         assertThat(ws.name()).isEqualTo("Proj");
+    }
+
+    @Test
+    void bootstrapUsesDefaultNameWhenOrgNameBlank() throws SQLException {
+        when(repo.findByGroupAndSlug(groupId, "default")).thenReturn(Optional.empty());
+        when(repo.insert(orgId, groupId, WorkspaceService.DEFAULT_WORKSPACE_NAME, "default")).thenReturn(wsId);
+        when(repo.findById(wsId))
+                .thenReturn(Optional.of(row(wsId, WorkspaceService.DEFAULT_WORKSPACE_NAME, "default")));
+
+        var ws = svc.bootstrapDefault(orgId, groupId, "  ");
+
+        assertThat(ws.name()).isEqualTo(WorkspaceService.DEFAULT_WORKSPACE_NAME);
+    }
+
+    @Test
+    void getNotFound() throws SQLException {
+        when(repo.findById(wsId)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> svc.get(wsId)).isInstanceOf(ConfigApiException.class);
+    }
+
+    @Test
+    void patchRejectsInvalidStatus() throws SQLException {
+        when(repo.findById(wsId)).thenReturn(Optional.of(row(wsId, "W", "default")));
+
+        assertThatThrownBy(() -> svc.patch(wsId, new WorkspacePatchRequest(null, "deleted")))
+                .isInstanceOf(ConfigApiException.class);
+    }
+
+    @Test
+    void patchUpdatesWorkspace() throws SQLException {
+        when(repo.findById(wsId)).thenReturn(Optional.of(row(wsId, "W", "default")));
+
+        svc.patch(wsId, new WorkspacePatchRequest("New name", "archived"));
+
+        verify(repo).update(wsId, "New name", "archived");
     }
 
     private WorkspaceRow row(UUID id, String name, String slug) {
