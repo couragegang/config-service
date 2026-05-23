@@ -17,8 +17,8 @@ paths:
   /orgs/{orgId}/workspaces:
     get:
       tags: [workspaces]
-      operationId: configWorkspacesList
       summary: Список workspace (фильтр group_id)
+      operationId: configWorkspacesList
       parameters:
         - $ref: '#/components/parameters/OrgId'
         - name: group_id
@@ -28,14 +28,15 @@ paths:
             format: uuid
       responses:
         '200':
+          description: OK
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/WorkspaceListResponse'
     post:
       tags: [workspaces]
-      operationId: configWorkspacesCreate
       summary: Создать workspace в группе
+      operationId: configWorkspacesCreate
       parameters:
         - $ref: '#/components/parameters/OrgId'
       requestBody:
@@ -46,6 +47,7 @@ paths:
               $ref: '#/components/schemas/WorkspaceCreateRequest'
       responses:
         '201':
+          description: OK
           content:
             application/json:
               schema:
@@ -53,17 +55,20 @@ paths:
   /workspaces/{workspaceId}:
     get:
       tags: [workspaces]
+      summary: Config Workspace Get
       operationId: configWorkspaceGet
       parameters:
         - $ref: '#/components/parameters/WorkspaceId'
       responses:
         '200':
+          description: OK
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Workspace'
     patch:
       tags: [workspaces]
+      summary: Config Workspace Patch
       operationId: configWorkspacePatch
       parameters:
         - $ref: '#/components/parameters/WorkspaceId'
@@ -74,6 +79,7 @@ paths:
               $ref: '#/components/schemas/WorkspacePatchRequest'
       responses:
         '200':
+          description: OK
           content:
             application/json:
               schema:
@@ -82,8 +88,8 @@ paths:
   /internal/orgs/{orgId}/bootstrap-default-workspace:
     post:
       tags: [internal]
-      operationId: configBootstrapDefaultWorkspace
       summary: Создать default workspace в default group (IAM при create org)
+      operationId: configBootstrapDefaultWorkspace
       security: []
       parameters:
         - $ref: '#/components/parameters/OrgId'
@@ -100,6 +106,7 @@ paths:
               $ref: '#/components/schemas/BootstrapDefaultWorkspaceRequest'
       responses:
         '201':
+          description: OK
           content:
             application/json:
               schema:
