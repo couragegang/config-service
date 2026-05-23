@@ -108,6 +108,53 @@ class WorkspaceServiceTest {
     }
 
     @Test
+    void createConflictWhenSlugTaken() throws SQLException {
+        when(repo.findByGroupAndSlug(groupId, "proj")).thenReturn(Optional.of(row(wsId, "Proj", "proj")));
+
+        assertThatThrownBy(() -> svc.create(orgId, new WorkspaceCreateRequest("Proj", "proj", groupId)))
+                .isInstanceOf(ConfigApiException.class);
+    }
+
+    @Test
+    void createUniqueViolationSql() throws SQLException {
+        when(repo.findByGroupAndSlug(groupId, "proj")).thenReturn(Optional.empty());
+        var sql = new SQLException("dup", "23505");
+        when(repo.insert(orgId, groupId, "Proj", "proj")).thenThrow(sql);
+
+        assertThatThrownBy(() -> svc.create(orgId, new WorkspaceCreateRequest("Proj", "proj", groupId)))
+                .isInstanceOf(ConfigApiException.class);
+    }
+
+    @Test
+    void bootstrapRetriesOnUniqueViolation() throws SQLException {
+        when(repo.findByGroupAndSlug(groupId, "default"))
+                .thenReturn(Optional.empty())
+                .thenReturn(Optional.of(row(wsId, "Default workspace", "default")));
+        var sql = new SQLException("dup", "23505");
+        when(repo.insert(orgId, groupId, WorkspaceService.DEFAULT_WORKSPACE_NAME, "default")).thenThrow(sql);
+
+        var ws = svc.bootstrapDefault(orgId, groupId, null);
+
+        assertThat(ws.slug()).isEqualTo("default");
+    }
+
+    @Test
+    void listWrapsSqlException() throws SQLException {
+        when(repo.listByOrg(orgId, Optional.empty(), 5)).thenThrow(new SQLException("db"));
+
+        assertThatThrownBy(() -> svc.list(orgId, Optional.empty(), 5)).isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
+    void patchActiveStatusAllowed() throws SQLException {
+        when(repo.findById(wsId)).thenReturn(Optional.of(row(wsId, "W", "default")), Optional.of(row(wsId, "W", "active")));
+
+        svc.patch(wsId, new WorkspacePatchRequest(null, "active"));
+
+        verify(repo).update(wsId, null, "active");
+    }
+
+    @Test
     void patchUpdatesWorkspace() throws SQLException {
         when(repo.findById(wsId)).thenReturn(Optional.of(row(wsId, "W", "default")));
 

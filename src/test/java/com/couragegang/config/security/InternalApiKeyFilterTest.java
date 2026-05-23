@@ -14,6 +14,16 @@ import reactor.core.publisher.Mono;
 class InternalApiKeyFilterTest {
 
     @Test
+    void rejectsMissingHeader() {
+        var filter = new InternalApiKeyFilter("expected");
+        var chain = mock(ServerFilterChain.class);
+
+        var response = Mono.from(filter.doFilter(HttpRequest.GET("/internal/x"), chain)).block();
+
+        assertThat(response.getStatus().getCode()).isEqualTo(HttpStatus.UNAUTHORIZED.getCode());
+    }
+
+    @Test
     void rejectsWrongKey() {
         var filter = new InternalApiKeyFilter("expected");
         var chain = mock(ServerFilterChain.class);

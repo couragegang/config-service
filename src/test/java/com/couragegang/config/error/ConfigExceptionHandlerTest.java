@@ -14,7 +14,7 @@ class ConfigExceptionHandlerTest {
         var ex = new ConfigApiException(HttpStatus.CONFLICT, "CONFLICT", "exists");
         var response = new ConfigExceptionHandler().handle(HttpRequest.GET("/"), ex);
 
-        assertThat(response.getStatus().getCode()).isEqualTo(HttpStatus.CONFLICT.getCode());
+        assertThat(response.status().getCode()).isEqualTo(HttpStatus.CONFLICT.getCode());
         assertThat(response.body()).isEqualTo(ErrorBody.of("CONFLICT", "exists"));
     }
 }
